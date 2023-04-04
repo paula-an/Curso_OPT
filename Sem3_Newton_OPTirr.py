@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 
 
 def f(x):
-    return -1.5*x**6-2*x**4+12*x
+    return -(-1.5*x**6-2*x**4+12*x)
+
 
 
 def df(x):
@@ -23,15 +24,16 @@ plt.grid()
 # Method parameters
 MAXITER = 1000
 TOL = 1e-12
+t = 1
 
 # Initial guest
 x = 8
 
 # Evaluating convexity
 if ddf(x) >= 0:
-    t = 1
+    print('positive convexity')
 else:
-    t = -1
+    print('negative convexity')
 
 if df(x)>=0:
     is_asc = True
@@ -44,7 +46,7 @@ if x <= 2:
 for iter in range(MAXITER):
     x_old = x
     print('Iteration: ', iter+1)
-    x = x +t*df(x)/ddf(x)
+    x = x-t*df(x)/ddf(x)
     print('x = ', x)
     print('dfx = ', df(x))
     if x <= 2:
