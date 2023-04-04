@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 
 def f(x):
-    return -(-1.5*x**6-2*x**4+12*x)
+    return -1.5*x**6-2*x**4+12*x
 
 
 
