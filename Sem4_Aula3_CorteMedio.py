@@ -13,6 +13,7 @@ mM = pyo.ConcreteModel()
 
 mM.Pg1 = pyo.Var(bounds=(0,40))
 mM.alpha = pyo.Var(bounds=(0,10000))
+
 mM.obj = pyo.Objective(rule = 10*mM.Pg1 + mM.alpha)
 
 mM.cuts = pyo.ConstraintList()
@@ -53,8 +54,8 @@ for iter in range(100):
         mS.del_component(mS.ConstraintFix)
     mS.ConstraintFix = pyo.Constraint(expr = mS.Pg1 == PG1)
 
-    LAMB = []
-    OBJ_S = []
+    LAMB = 0
+    OBJ_S = 0
 
     for icen in range(NCEN):
         print("  ")
@@ -75,12 +76,12 @@ for iter in range(100):
         for v in [mS.ConstraintFix]:
             print(v, mS.dual[v], sep=' = ')
 
-        LAMB.append(mS.dual[mS.ConstraintFix])
-        OBJ_S.append(pyo.value(mS.obj))
+        LAMB += mS.dual[mS.ConstraintFix]*PROB[icen]
+        OBJ_S += pyo.value(mS.obj)*PROB[icen]
 
     # Convergence checking
 
-    z_up = OBJ_M - ALPHA + np.sum([OBJ_S[icen]*PROB[icen] for icen in range(NCEN)])
+    z_up = OBJ_M - ALPHA + OBJ_S
     z_dn = OBJ_M
     print("Zup: ", z_up)
     print("Zdn: ", z_dn)
@@ -92,8 +93,8 @@ for iter in range(100):
     print("Iteration: ", iter+2)
 
     # Master Problem
-    for icen in range(NCEN):
-        mM.cuts.add(expr = OBJ_S[icen] + LAMB[icen]*mM.Pg1 <= mM.alpha + LAMB[icen]*PG1)
+    #mM.cuts.add(expr = np.sum([(OBJ_S[icen] + LAMB[icen]*mM.Pg1)*PROB[icen] for icen in range(NCEN)]) <= np.sum([(mM.alpha + LAMB[icen]*PG1)*PROB[icen] for icen in range(NCEN)]))
+    mM.cuts.add(expr = OBJ_S + LAMB*mM.Pg1 <= mM.alpha + LAMB*PG1)
 
     resM = opt.solve(mM)
 

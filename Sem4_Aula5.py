@@ -1,10 +1,4 @@
 import pyomo.environ as pyo
-import numpy as np
-
-# Cenários de demanda
-LOAD = np.array([110, 100, 90, 80, 75])
-PROB = np.array([30, 25, 20, 15, 10])/100
-NCEN = len(LOAD)
 
 # Master problem
 print("Iteration: 1")
@@ -34,17 +28,16 @@ PG1 = pyo.value(mM.Pg1)
 
 # Subproblem
 
-
 mS = pyo.ConcreteModel()
 
 mS.Pg1 = pyo.Var(bounds=(0,40))
 mS.Pg2 = pyo.Var(bounds=(0,40))
 mS.Pg3 = pyo.Var(bounds=(0,40))
-mS.Pr = pyo.Var(bounds=(0,110))
+mS.Pr = pyo.Var(bounds=(0,100))
 
-mS.obj = pyo.Objective(rule = 17*mS.Pg2 + 28*mS.Pg3 + 1000*mS.Pr)
+mS.OBJ = pyo.Objective(rule = 17*mS.Pg2 + 28*mS.Pg3 + 1000*mS.Pr)
 
-
+mS.LoadBalance = pyo.Constraint(expr = mS.Pg1 + mS.Pg2 + mS.Pg3 + mS.Pr == 100)
 
 mS.dual = pyo.Suffix(direction=pyo.Suffix.IMPORT)
 
@@ -52,35 +45,25 @@ for iter in range(100):
     if iter>0:
         mS.del_component(mS.ConstraintFix)
     mS.ConstraintFix = pyo.Constraint(expr = mS.Pg1 == PG1)
+    resS = opt.solve(mS)
 
-    LAMB = []
-    OBJ_S = []
+    print("Primals of subproblem:")
+    for v in [mS.Pg1, mS.Pg2, mS.Pg3, mS.Pr]:
+        print(v, pyo.value(v), sep=' = ')
 
-    for icen in range(NCEN):
-        print("  ")
-        print("Scenario:", icen+1)
-        if icen>0 or iter>0:
-            mS.del_component(mS.LoadBalance)
-        mS.LoadBalance = pyo.Constraint(expr = mS.Pg1 + mS.Pg2 + mS.Pg3 + mS.Pr == LOAD[icen])
-        resS = opt.solve(mS)
+    print("Objective of subproblem:")
+    print(pyo.value(mS.OBJ))
 
-        print("Primals of subproblem:")
-        for v in [mS.Pg1, mS.Pg2, mS.Pg3, mS.Pr]:
-            print(v, pyo.value(v), sep=' = ')
+    print("Duals of subproblem:")
+    for v in [mS.ConstraintFix]:
+        print(v, mS.dual[v], sep=' = ')
 
-        print("Objective of subproblem:")
-        print(pyo.value(mS.obj))
-
-        print("Duals of subproblem:")
-        for v in [mS.ConstraintFix]:
-            print(v, mS.dual[v], sep=' = ')
-
-        LAMB.append(mS.dual[mS.ConstraintFix])
-        OBJ_S.append(pyo.value(mS.obj))
+    LAMB = mS.dual[mS.ConstraintFix]
+    OBJ_S = pyo.value(mS.OBJ)
 
     # Convergence checking
 
-    z_up = OBJ_M - ALPHA + np.sum([OBJ_S[icen]*PROB[icen] for icen in range(NCEN)])
+    z_up = OBJ_M - ALPHA + OBJ_S
     z_dn = OBJ_M
     print("Zup: ", z_up)
     print("Zdn: ", z_dn)
@@ -92,8 +75,8 @@ for iter in range(100):
     print("Iteration: ", iter+2)
 
     # Master Problem
-    for icen in range(NCEN):
-        mM.cuts.add(expr = OBJ_S[icen] + LAMB[icen]*mM.Pg1 <= mM.alpha + LAMB[icen]*PG1)
+
+    mM.cuts.add(expr = OBJ_S + LAMB*mM.Pg1 <= mM.alpha + LAMB*PG1)
 
     resM = opt.solve(mM)
 

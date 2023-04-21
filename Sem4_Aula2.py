@@ -7,7 +7,8 @@ mM = pyo.ConcreteModel()
 
 mM.Pg1 = pyo.Var(bounds=(0,40))
 mM.alpha = pyo.Var(bounds=(0,10000))
-mM.OBJ = pyo.Objective(rule = 10*mM.Pg1 + mM.alpha)
+
+mM.obj = pyo.Objective(rule = 10*mM.Pg1 + mM.alpha)
 
 mM.cuts = pyo.ConstraintList()
 
@@ -20,9 +21,9 @@ for v in [mM.Pg1, mM.alpha]:
     print(v, pyo.value(v), sep=' = ')
 
 print("Objective of master problem:")
-print(pyo.value(mM.OBJ))
+print(pyo.value(mM.obj))
 
-OBJ_M = pyo.value(mM.OBJ)
+OBJ_M = pyo.value(mM.obj)
 ALPHA = pyo.value(mM.alpha)
 PG1 = pyo.value(mM.Pg1)
 
@@ -37,7 +38,7 @@ mS.Pr = pyo.Var(bounds=(0,100))
 
 mS.OBJ = pyo.Objective(rule = 17*mS.Pg2 + 28*mS.Pg3 + 1000*mS.Pr)
 
-mS.Constraint = pyo.Constraint(expr = mS.Pg1 + mS.Pg2 + mS.Pg3 + mS.Pr == 100)
+mS.LoadBalance = pyo.Constraint(expr = mS.Pg1 + mS.Pg2 + mS.Pg3 + mS.Pr == 100)
 
 mS.dual = pyo.Suffix(direction=pyo.Suffix.IMPORT)
 
@@ -58,7 +59,7 @@ for iter in range(100):
     for v in [mS.ConstraintFix]:
         print(v, mS.dual[v], sep=' = ')
 
-    lamb = mS.dual[mS.ConstraintFix]
+    LAMB = mS.dual[mS.ConstraintFix]
     OBJ_S = pyo.value(mS.OBJ)
 
     # Convergence checking
@@ -76,7 +77,7 @@ for iter in range(100):
 
     # Master Problem
 
-    mM.cuts.add(expr = OBJ_S + lamb*mM.Pg1 <= mM.alpha + lamb*PG1)
+    mM.cuts.add(expr = OBJ_S + LAMB*mM.Pg1 <= mM.alpha + LAMB*PG1)
 
     resM = opt.solve(mM)
 
@@ -85,9 +86,9 @@ for iter in range(100):
         print(v, pyo.value(v), sep=' = ')
 
     print("Objective of master problem:")
-    print(pyo.value(mM.OBJ))
+    print(pyo.value(mM.obj))
 
-    OBJ_M = pyo.value(mM.OBJ)
+    OBJ_M = pyo.value(mM.obj)
     ALPHA = pyo.value(mM.alpha)
     PG1 = pyo.value(mM.Pg1)
 
