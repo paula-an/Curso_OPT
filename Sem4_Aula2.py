@@ -36,7 +36,7 @@ mS.Pg2 = pyo.Var(bounds=(0,40))
 mS.Pg3 = pyo.Var(bounds=(0,40))
 mS.Pr = pyo.Var(bounds=(0,100))
 
-mS.OBJ = pyo.Objective(rule = 17*mS.Pg2 + 28*mS.Pg3 + 1000*mS.Pr)
+mS.obj = pyo.Objective(rule = 17*mS.Pg2 + 28*mS.Pg3 + 1000*mS.Pr)
 
 mS.LoadBalance = pyo.Constraint(expr = mS.Pg1 + mS.Pg2 + mS.Pg3 + mS.Pr == 100)
 
@@ -53,14 +53,14 @@ for iter in range(100):
         print(v, pyo.value(v), sep=' = ')
 
     print("Objective of subproblem:")
-    print(pyo.value(mS.OBJ))
+    print(pyo.value(mS.obj))
 
     print("Duals of subproblem:")
     for v in [mS.ConstraintFix]:
         print(v, mS.dual[v], sep=' = ')
 
     LAMB = mS.dual[mS.ConstraintFix]
-    OBJ_S = pyo.value(mS.OBJ)
+    OBJ_S = pyo.value(mS.obj)
 
     # Convergence checking
 

@@ -1,93 +1,171 @@
 import pyomo.environ as pyo
+import numpy as np
 
-# Master problem
-print("Iteration: 1")
+# Constants
+LOAD = 50
+VA0 = 90
+TOL = 1e-1
 
-mM = pyo.ConcreteModel()
-
-mM.Pg1 = pyo.Var(bounds=(0,40))
-mM.alpha = pyo.Var(bounds=(0,10000))
-mM.obj = pyo.Objective(rule = 10*mM.Pg1 + mM.alpha)
-
-mM.cuts = pyo.ConstraintList()
-
+# Stages
+mS1 = pyo.ConcreteModel()
+mS1.dual = pyo.Suffix(direction=pyo.Suffix.IMPORT)
+mS2 = pyo.ConcreteModel()
+mS2.dual = pyo.Suffix(direction=pyo.Suffix.IMPORT)
+mS3 = pyo.ConcreteModel()
+mS3.dual = pyo.Suffix(direction=pyo.Suffix.IMPORT)
 opt = pyo.SolverFactory('Ipopt')
 
-resM = opt.solve(mM)
+# Variables
+mS1.Pg1 = pyo.Var(bounds=(0,30))
+mS1.Pg2 = pyo.Var(bounds=(0,30))
+mS1.Pr = pyo.Var(bounds=(0,LOAD))
+mS1.Vt1 = pyo.Var(bounds=(0,50))
+mS1.Va1 = pyo.Var(bounds=(0,90))
+mS1.alpha = pyo.Var(bounds=(0,10000))
 
-print("Primals of master problem:")
-for v in [mM.Pg1, mM.alpha]:
+mS2.Pg1 = pyo.Var(bounds=(0,30))
+mS2.Pg2 = pyo.Var(bounds=(0,30))
+mS2.Pr = pyo.Var(bounds=(0,LOAD))
+mS2.Vt2 = pyo.Var(bounds=(0,50))
+mS2.Va2 = pyo.Var(bounds=(0,90))
+mS2.alpha = pyo.Var(bounds=(0,10000))
+
+mS3.Pg1 = pyo.Var(bounds=(0,30))
+mS3.Pg2 = pyo.Var(bounds=(0,30))
+mS3.Pr = pyo.Var(bounds=(0,LOAD))
+mS3.Vt3 = pyo.Var(bounds=(0,50))
+mS3.Va3 = pyo.Var(bounds=(0,90))
+
+# Load Balance Constraints
+mS1.LoadBalance = pyo.Constraint(expr = mS1.Pg1 + mS1.Pg2 + mS1.Vt1 + mS1.Pr == LOAD)
+mS2.LoadBalance = pyo.Constraint(expr = mS2.Pg1 + mS2.Pg2 + mS2.Vt2 + mS2.Pr == LOAD)
+mS3.LoadBalance = pyo.Constraint(expr = mS3.Pg1 + mS3.Pg2 + mS3.Vt3 + mS3.Pr == LOAD)
+
+# Objectives
+mS1.obj = pyo.Objective(rule = 10*mS1.Pg1 + 20*mS1.Pg2 + 1000*mS1.Pr + mS1.alpha)
+mS2.obj = pyo.Objective(rule = 10*mS2.Pg1 + 20*mS2.Pg2 + 1000*mS2.Pr + mS2.alpha)
+mS3.obj = pyo.Objective(rule = 10*mS3.Pg1 + 20*mS3.Pg2 + 1000*mS3.Pr)
+
+# List of cuts
+mS1.cuts = pyo.ConstraintList()
+mS2.cuts = pyo.ConstraintList()
+
+# Dynamic Optimization
+
+## -------
+## Forward
+## -------
+# Stage 1
+
+mS1.Hydro= pyo.Constraint(expr = mS1.Va1 + mS1.Vt1 == VA0)
+
+resS1 = opt.solve(mS1)
+
+print("Primals of Stage 1:")
+for v in [mS1.Pg1, mS1.Pg2, mS1.Pr, mS1.Vt1, mS1.Va1, mS1.alpha]:
     print(v, pyo.value(v), sep=' = ')
 
-print("Objective of master problem:")
-print(pyo.value(mM.obj))
+print("Objective of Stage 1:")
+print(pyo.value(mS1.obj))
 
-OBJ_M = pyo.value(mM.obj)
-ALPHA = pyo.value(mM.alpha)
-PG1 = pyo.value(mM.Pg1)
-
-# Subproblem
-
-mS = pyo.ConcreteModel()
-
-mS.Pg1 = pyo.Var(bounds=(0,40))
-mS.Pg2 = pyo.Var(bounds=(0,40))
-mS.Pg3 = pyo.Var(bounds=(0,40))
-mS.Pr = pyo.Var(bounds=(0,100))
-
-mS.OBJ = pyo.Objective(rule = 17*mS.Pg2 + 28*mS.Pg3 + 1000*mS.Pr)
-
-mS.LoadBalance = pyo.Constraint(expr = mS.Pg1 + mS.Pg2 + mS.Pg3 + mS.Pr == 100)
-
-mS.dual = pyo.Suffix(direction=pyo.Suffix.IMPORT)
+OBJ_S1 = pyo.value(mS1.obj)
+ALPHA_S1 = pyo.value(mS1.alpha)
 
 for iter in range(100):
+    print('  ')
+    print('iter:', iter)
+    print('  ')
+    # Stage 2
+    VA1 = pyo.value(mS1.Va1)
     if iter>0:
-        mS.del_component(mS.ConstraintFix)
-    mS.ConstraintFix = pyo.Constraint(expr = mS.Pg1 == PG1)
-    resS = opt.solve(mS)
+        mS2.del_component(mS2.Hydro)
+    mS2.Hydro= pyo.Constraint(expr = mS2.Va2 + mS2.Vt2 == VA1)
 
-    print("Primals of subproblem:")
-    for v in [mS.Pg1, mS.Pg2, mS.Pg3, mS.Pr]:
+    resS2 = opt.solve(mS2)
+
+    print("Primals of Stage 2:")
+    for v in [mS2.Pg1, mS2.Pg2, mS2.Pr, mS2.Vt2, mS2.Va2, mS2.alpha]:
         print(v, pyo.value(v), sep=' = ')
 
-    print("Objective of subproblem:")
-    print(pyo.value(mS.OBJ))
+    print("Objective of Stage 2:")
+    print(pyo.value(mS2.obj))
+    
+    OBJ_S2 = pyo.value(mS2.obj)
+    ALPHA_S2 = pyo.value(mS2.alpha)
 
-    print("Duals of subproblem:")
-    for v in [mS.ConstraintFix]:
-        print(v, mS.dual[v], sep=' = ')
+    # Stage 3
+    VA2 = pyo.value(mS2.Va2)
+    if iter>0:
+        mS3.del_component(mS3.Hydro)
+    mS3.Hydro= pyo.Constraint(expr = mS3.Va3 + mS3.Vt3 == VA2)
 
-    LAMB = mS.dual[mS.ConstraintFix]
-    OBJ_S = pyo.value(mS.OBJ)
+    resS3 = opt.solve(mS3)
 
-    # Convergence checking
+    print("Primals of Stage 3:")
+    for v in [mS3.Pg1, mS3.Pg2, mS3.Pr, mS3.Vt3, mS3.Va3]:
+        print(v, pyo.value(v), sep=' = ')
 
-    z_up = OBJ_M - ALPHA + OBJ_S
-    z_dn = OBJ_M
-    print("Zup: ", z_up)
-    print("Zdn: ", z_dn)
+    print("Objective of Stage 3:")
+    print(pyo.value(mS3.obj))
 
-    if z_up - z_dn < 1e-3:
+    print("Duals of Stage 3:")
+    for v in [mS3.Hydro]:
+        print(v, mS3.dual[v], sep=' = ')
+    
+    OBJ_S3 = pyo.value(mS3.obj)
+    LAMB3 = mS3.dual[mS3.Hydro]
+
+    ## --------
+    ## Backward
+    ## --------
+    z_up = list()
+    z_dn = list()
+
+    # Stage 2
+    mS2.cuts.add(expr = OBJ_S3 + LAMB3*mS2.Va2 <= mS2.alpha + LAMB3*VA2)
+
+    resS2 = opt.solve(mS2)
+
+    print("Primals of Stage 2:")
+    for v in [mS2.Pg1, mS2.Pg2, mS2.Pr, mS2.Vt2, mS2.Va2, mS2.alpha]:
+        print(v, pyo.value(v), sep=' = ')
+
+    print("Objective of Stage 2:")
+    print(pyo.value(mS2.obj))
+
+    print("Duals of Stage 2:")
+    for v in [mS2.Hydro]:
+        print(v, mS2.dual[v], sep=' = ')
+
+    OBJ_S2 = pyo.value(mS2.obj)
+    ALPHA_S2 = pyo.value(mS2.alpha)
+    LAMB2 = mS2.dual[mS2.Hydro]
+
+    z_up.append(OBJ_S2 - ALPHA_S2 + OBJ_S3)
+    z_dn.append(OBJ_S2)
+
+    # Stage 1
+    mS1.cuts.add(expr = OBJ_S2 + LAMB2*mS1.Va1 <= mS1.alpha + LAMB2*VA1)
+
+    resS1 = opt.solve(mS1)
+
+    print("Primals of Stage 1:")
+    for v in [mS1.Pg1, mS1.Pg2, mS1.Pr, mS1.Vt1, mS1.Va1, mS1.alpha]:
+        print(v, pyo.value(v), sep=' = ')
+
+    print("Objective of Stage 1:")
+    print(pyo.value(mS1.obj))
+
+    OBJ_S1 = pyo.value(mS1.obj)
+    ALPHA_S1 = pyo.value(mS1.alpha)
+
+    # Convergence check
+    z_up.append(OBJ_S1 - ALPHA_S1 + OBJ_S2)
+    z_dn.append(OBJ_S1)
+    z_up = np.array(z_up)
+    z_dn = np.array(z_dn)
+    print("Zup =", z_up, "| Zdn =", z_dn)
+    print("Convergence:", np.max(z_up - z_dn))
+    
+    if np.max(np.abs(z_up - z_dn)) < TOL:
         break
-
-    print('----------')
-    print("Iteration: ", iter+2)
-
-    # Master Problem
-
-    mM.cuts.add(expr = OBJ_S + LAMB*mM.Pg1 <= mM.alpha + LAMB*PG1)
-
-    resM = opt.solve(mM)
-
-    print("Primals:")
-    for v in [mM.Pg1, mM.alpha]:
-        print(v, pyo.value(v), sep=' = ')
-
-    print("Objective of master problem:")
-    print(pyo.value(mM.obj))
-
-    OBJ_M = pyo.value(mM.obj)
-    ALPHA = pyo.value(mM.alpha)
-    PG1 = pyo.value(mM.Pg1)
-
