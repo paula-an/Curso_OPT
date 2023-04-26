@@ -7,10 +7,10 @@ def f(x):
     return -1.5*x**6-2*x**4+12*x
 
 
-
 def df(x):
     h = 0.0001
     return (f(x+h)-f(x))/h
+
 
 def ddf(x):
     h = 0.0001
