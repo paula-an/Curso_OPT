@@ -4,18 +4,20 @@ import numpy as np
 # Constants
 LOAD = 50
 VA0 = 90
-TOL = 1e-1
+TOL = 1e-2
 
-# Stages
+
+opt = pyo.SolverFactory('glpk')
+
+# Models (Stages)
 mS1 = pyo.ConcreteModel()
 mS1.dual = pyo.Suffix(direction=pyo.Suffix.IMPORT)
 mS2 = pyo.ConcreteModel()
 mS2.dual = pyo.Suffix(direction=pyo.Suffix.IMPORT)
 mS3 = pyo.ConcreteModel()
 mS3.dual = pyo.Suffix(direction=pyo.Suffix.IMPORT)
-opt = pyo.SolverFactory('Ipopt')
 
-# Variables
+# Variables - Stage 1
 mS1.Pg1 = pyo.Var(bounds=(0,30))
 mS1.Pg2 = pyo.Var(bounds=(0,30))
 mS1.Pr = pyo.Var(bounds=(0,LOAD))
@@ -23,6 +25,7 @@ mS1.Vt1 = pyo.Var(bounds=(0,50))
 mS1.Va1 = pyo.Var(bounds=(0,90))
 mS1.alpha = pyo.Var(bounds=(0,10000))
 
+# Variables - Stage 2
 mS2.Pg1 = pyo.Var(bounds=(0,30))
 mS2.Pg2 = pyo.Var(bounds=(0,30))
 mS2.Pr = pyo.Var(bounds=(0,LOAD))
@@ -30,6 +33,7 @@ mS2.Vt2 = pyo.Var(bounds=(0,50))
 mS2.Va2 = pyo.Var(bounds=(0,90))
 mS2.alpha = pyo.Var(bounds=(0,10000))
 
+# Variables - Stage 3
 mS3.Pg1 = pyo.Var(bounds=(0,30))
 mS3.Pg2 = pyo.Var(bounds=(0,30))
 mS3.Pr = pyo.Var(bounds=(0,LOAD))
@@ -71,15 +75,17 @@ print(pyo.value(mS1.obj))
 OBJ_S1 = pyo.value(mS1.obj)
 ALPHA_S1 = pyo.value(mS1.alpha)
 
-for iter in range(100):
+flag_to_break = False
+for iter in range(1000):
     print('  ')
     print('iter:', iter)
     print('  ')
-    # Stage 2
+
+    # Stage 2 - Forward
     VA1 = pyo.value(mS1.Va1)
     if iter>0:
         mS2.del_component(mS2.Hydro)
-    mS2.Hydro= pyo.Constraint(expr = mS2.Va2 + mS2.Vt2 == VA1)
+    mS2.Hydro = pyo.Constraint(expr = mS2.Va2 + mS2.Vt2 == VA1)
 
     resS2 = opt.solve(mS2)
 
@@ -93,11 +99,11 @@ for iter in range(100):
     OBJ_S2 = pyo.value(mS2.obj)
     ALPHA_S2 = pyo.value(mS2.alpha)
 
-    # Stage 3
+    # Stage 3 - Forward
     VA2 = pyo.value(mS2.Va2)
     if iter>0:
         mS3.del_component(mS3.Hydro)
-    mS3.Hydro= pyo.Constraint(expr = mS3.Va3 + mS3.Vt3 == VA2)
+    mS3.Hydro = pyo.Constraint(expr = mS3.Va3 + mS3.Vt3 == VA2)
 
     resS3 = opt.solve(mS3)
 
@@ -115,13 +121,16 @@ for iter in range(100):
     OBJ_S3 = pyo.value(mS3.obj)
     LAMB3 = mS3.dual[mS3.Hydro]
 
+    if flag_to_break:
+        break
+
     ## --------
     ## Backward
     ## --------
     z_up = list()
     z_dn = list()
 
-    # Stage 2
+    # Stage 2 - Backward
     mS2.cuts.add(expr = OBJ_S3 + LAMB3*mS2.Va2 <= mS2.alpha + LAMB3*VA2)
 
     resS2 = opt.solve(mS2)
@@ -144,7 +153,7 @@ for iter in range(100):
     z_up.append(OBJ_S2 - ALPHA_S2 + OBJ_S3)
     z_dn.append(OBJ_S2)
 
-    # Stage 1
+    # Stage 1 - Backward
     mS1.cuts.add(expr = OBJ_S2 + LAMB2*mS1.Va1 <= mS1.alpha + LAMB2*VA1)
 
     resS1 = opt.solve(mS1)
@@ -168,4 +177,23 @@ for iter in range(100):
     print("Convergence:", np.max(z_up - z_dn))
     
     if np.max(np.abs(z_up - z_dn)) < TOL:
-        break
+        flag_to_break = True
+
+# Results
+print(" ")
+print("Results:")
+print('Stage 1:')
+for v in [mS1.Pg1, mS1.Pg2, mS1.Pr, mS1.Vt1, mS1.Va1]:
+    print(v, pyo.value(v), sep=' = ')
+print('Stage 2:')
+for v in [mS2.Pg1, mS2.Pg2, mS2.Pr, mS2.Vt2, mS2.Va2]:
+    print(v, pyo.value(v), sep=' = ')
+print('Stage 3:')
+for v in [mS3.Pg1, mS3.Pg2, mS3.Pr, mS3.Vt3, mS3.Va3]:
+    print(v, pyo.value(v), sep=' = ')
+
+total_cost = 10*(pyo.value(mS1.Pg1)+pyo.value(mS2.Pg1)+pyo.value(mS3.Pg1))\
++20*(pyo.value(mS1.Pg2)+pyo.value(mS2.Pg2)+pyo.value(mS3.Pg2))
+
+print("Total cost:")
+print(total_cost)
