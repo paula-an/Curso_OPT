@@ -12,7 +12,7 @@ m.x = pyo.Var()
 m.y = pyo.Var()
 
 # Objective
-m.obj = pyo.Objective(expr = pyo.exp(m.x) * (4 * m.x**2 + 2 * m.y**2 + 4 * m.x * m.y + 2 * m.y + 1))
+m.obj = pyo.Objective(expr = pyo.exp(m.x)*(4*m.x**2+2*m.y**2+4*m.x*m.y+2*m.y+1))
 
 # Constraints
 m.Constraint0 = pyo.Constraint(expr = m.x*m.y >= -10)
