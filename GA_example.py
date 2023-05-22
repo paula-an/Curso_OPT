@@ -96,10 +96,10 @@ for iter in range(ITER_MAX):
     pop = full_pop[full_pop_idx[range(POP_SIZE)]]
     pop_fit = full_pop_fit[range(POP_SIZE)]
 
-    perf_best_fit[iter] = full_pop_fit[0]
-    perf_best_ind[iter] = full_pop[pop_idx[0]]
+    perf_best_fit[iter+1] = full_pop_fit[0]
+    perf_best_ind[iter+1] = full_pop[pop_idx[0]]
 
-    print("iter: ",iter,"| fitness:", perf_best_fit[iter])
+    print("iter: ",iter+1,"| fitness:", perf_best_fit[iter+1])
 
 # plotting surface
 def fob_plot(X,Y):
