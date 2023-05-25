@@ -22,7 +22,7 @@ mP.Constraint3 = pyo.Constraint(expr = 7*mP.x1 +   mP.x2 + 3*mP.x3 >= 40)
 mP.Constraint4 = pyo.Constraint(expr =   mP.x1 + 2*mP.x2 + 4*mP.x3 >= 50)
 
 # Solving primal problem
-resP = opt.solve(mP)
+opt.solve(mP)
 
 print("Primals:")
 for v in [mP.x1, mP.x2, mP.x3]:
@@ -53,7 +53,7 @@ mD.Constraint1 = pyo.Constraint(expr = 3*mD.w1 + 8*mD.w2 +   mD.w3 + 2*mD.w4 <= 
 mD.Constraint2 = pyo.Constraint(expr =   mD.w1 + 5*mD.w2 + 3*mD.w3 + 4*mD.w4 <= 1)
 
 # Solving dual problem
-resD = opt.solve(mD)
+opt.solve(mD)
 
 print("Duals from dual problem:")
 for v in [mD.w1, mD.w2, mD.w3, mD.w4]:

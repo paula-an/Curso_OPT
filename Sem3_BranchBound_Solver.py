@@ -21,7 +21,7 @@ m.Constraint2 = pyo.Constraint(expr = 4*m.x1+3*m.x2+3*m.x3 <= 25)
 m.Constraint3 = pyo.Constraint(expr = 2*m.x1+4*m.x2+5*m.x3 <= 30)
 
 # Solving problem
-res = opt.solve(m)
+opt.solve(m)
 
 print("Primals")
 for v in [m.x1, m.x2, m.x3]:

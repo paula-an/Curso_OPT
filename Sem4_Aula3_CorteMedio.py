@@ -24,7 +24,7 @@ mM.obj = pyo.Objective(rule = 10*mM.Pg1 + mM.alpha)
 mM.cuts = pyo.ConstraintList()
 
 # Solving master problem
-resM = opt.solve(mM)
+opt.solve(mM)
 
 print("Primals of master problem:")
 for v in [mM.Pg1, mM.alpha]:
@@ -70,7 +70,7 @@ for iter in range(100):
         mS.LoadBalance = pyo.Constraint(expr = mS.Pg1 + mS.Pg2 + mS.Pg3 + mS.Pr == LOAD[icen])
         
         # Solving subproblem
-        resS = opt.solve(mS)
+        opt.solve(mS)
 
         print("Primals of subproblem:")
         for v in [mS.Pg1, mS.Pg2, mS.Pg3, mS.Pr]:
@@ -101,7 +101,7 @@ for iter in range(100):
     mM.cuts.add(expr = OBJ_S + LAMB*mM.Pg1 <= mM.alpha + LAMB*PG1)
 
     # Solving master problem
-    resM = opt.solve(mM)
+    opt.solve(mM)
 
     print("Primals:")
     for v in [mM.Pg1, mM.alpha]:

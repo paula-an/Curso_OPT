@@ -13,7 +13,7 @@ m.x = pyo.Var()
 m.obj = pyo.Objective(expr = -1.5*m.x**6-2*m.x**4+12*m.x, sense=pyo.maximize)
 
 # Solving model
-res = opt.solve(m)
+opt.solve(m)
 
 print("Primals")
 for v in [m.x]:

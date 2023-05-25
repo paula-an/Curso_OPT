@@ -23,7 +23,7 @@ m.obj = pyo.Objective(expr = 10*m.pg1 + 17*m.pg2 + 28*m.pg3)
 m.Constraint = pyo.Constraint(expr = m.pg1 + m.pg2 + m.pg3 == 100)
 
 # Solving model
-res = opt.solve(m)
+opt.solve(m)
 
 print("Primals")
 for v in [m.pg1, m.pg2, m.pg3]:

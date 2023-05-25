@@ -45,7 +45,7 @@ mS.Hydro1 = pyo.Constraint(expr = mS.Va_1 + mS.Vt_1 == VA0)
 mS.Hydro2 = pyo.Constraint(expr = mS.Va_2 + mS.Vt_2 == mS.Va_1)
 mS.Hydro3 = pyo.Constraint(expr = mS.Va_3 + mS.Vt_3 == mS.Va_2)
 
-resS1 = opt.solve(mS)
+opt.solve(mS)
 
 print("Primals:")
 for v in [mS.Pg1_1, mS.Pg2_1, mS.Pr_1, mS.Vt_1, mS.Va_1,

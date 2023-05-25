@@ -42,7 +42,7 @@ for icon in setR:
     m.cons.add(cons_rule(icon))
 
 # Solving problem
-res = opt.solve(m)
+opt.solve(m)
 
 print("Primals")
 p = list()

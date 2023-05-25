@@ -19,7 +19,7 @@ m.Constraint0 = pyo.Constraint(expr = m.x*m.y >= -10)
 m.Constraint1 = pyo.Constraint(expr = 1.5+m.x*m.y-m.x-m.y <= 0)
 
 # Solving model
-res = opt.solve(m)
+opt.solve(m)
 
 print("Primals")
 for v in [m.x, m.y]:

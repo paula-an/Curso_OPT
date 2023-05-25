@@ -63,7 +63,7 @@ mS2.cuts = pyo.ConstraintList()
 
 mS1.Hydro= pyo.Constraint(expr = mS1.Va1 + mS1.Vt1 == VA0)
 
-resS1 = opt.solve(mS1)
+opt.solve(mS1)
 
 print("Primals of Stage 1:")
 for v in [mS1.Pg1, mS1.Pg2, mS1.Pr, mS1.Vt1, mS1.Va1, mS1.alpha]:
@@ -87,7 +87,7 @@ for iter in range(1000):
         mS2.del_component(mS2.Hydro)
     mS2.Hydro = pyo.Constraint(expr = mS2.Va2 + mS2.Vt2 == VA1)
 
-    resS2 = opt.solve(mS2)
+    opt.solve(mS2)
 
     print("Primals of Stage 2:")
     for v in [mS2.Pg1, mS2.Pg2, mS2.Pr, mS2.Vt2, mS2.Va2, mS2.alpha]:
@@ -105,7 +105,7 @@ for iter in range(1000):
         mS3.del_component(mS3.Hydro)
     mS3.Hydro = pyo.Constraint(expr = mS3.Va3 + mS3.Vt3 == VA2)
 
-    resS3 = opt.solve(mS3)
+    opt.solve(mS3)
 
     print("Primals of Stage 3:")
     for v in [mS3.Pg1, mS3.Pg2, mS3.Pr, mS3.Vt3, mS3.Va3]:
@@ -133,7 +133,7 @@ for iter in range(1000):
     # Stage 2 - Backward
     mS2.cuts.add(expr = OBJ_S3 + LAMB3*mS2.Va2 <= mS2.alpha + LAMB3*VA2)
 
-    resS2 = opt.solve(mS2)
+    opt.solve(mS2)
 
     print("Primals of Stage 2:")
     for v in [mS2.Pg1, mS2.Pg2, mS2.Pr, mS2.Vt2, mS2.Va2, mS2.alpha]:
@@ -156,7 +156,7 @@ for iter in range(1000):
     # Stage 1 - Backward
     mS1.cuts.add(expr = OBJ_S2 + LAMB2*mS1.Va1 <= mS1.alpha + LAMB2*VA1)
 
-    resS1 = opt.solve(mS1)
+    opt.solve(mS1)
 
     print("Primals of Stage 1:")
     for v in [mS1.Pg1, mS1.Pg2, mS1.Pr, mS1.Vt1, mS1.Va1, mS1.alpha]:

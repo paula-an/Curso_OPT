@@ -19,7 +19,7 @@ m.Constraint0 = pyo.Constraint(expr = m.x1 - m.x2 == 3)
 m.Constraint1 = pyo.Constraint(expr = 5*m.x1 + 2*m.x2 == 29.4)
 
 # Solving model
-res = opt.solve(m)
+opt.solve(m)
 
 print("Primals")
 for v in [m.x1, m.x2]:
