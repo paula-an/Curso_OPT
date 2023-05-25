@@ -38,7 +38,5 @@ for v in [m.Constraint1, m.Constraint1]:
 
 print("Duals of canalization")
 for v in [m.x1, m.x2]:
-    print(
-        "%s %12g %12g" % (v, m.ipopt_zL_out[v], m.ipopt_zU_out[v])
-    )
+    print("%s %12g %12g" % (v, m.ipopt_zL_out[v], m.ipopt_zU_out[v]))
 
