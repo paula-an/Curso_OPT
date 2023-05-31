@@ -2,7 +2,6 @@ import numpy as np
 from geneticalgorithm import geneticalgorithm as ga
 
 def fob(x):
-    # return x[0]**2+x[1]**2
     return -np.abs(
         np.sin(x[0])
         * np.cos(x[1])
