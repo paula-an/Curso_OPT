@@ -43,7 +43,6 @@ model.run()
 
 # plotting surface
 def fob_plot(X,Y):
-    #return X**2+Y**2
     return X**2+Y**2
 # Plot 3D surface
 fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
