@@ -33,7 +33,7 @@ print("Objective")
 print(pyo.value(m.obj))
 
 print("Duals")
-for v in [m.Constraint1, m.Constraint1]:
+for v in [m.Constraint1, m.Constraint2]:
     print(v, m.dual[v], sep=' = ')
 
 print("Duals of canalization")
